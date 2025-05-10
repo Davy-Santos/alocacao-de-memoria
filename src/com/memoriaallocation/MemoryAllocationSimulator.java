@@ -272,3 +272,6 @@ public class MemoryAllocationSimulator extends JFrame {
         }
     }
 }
+
+
+testeeeeeeee
