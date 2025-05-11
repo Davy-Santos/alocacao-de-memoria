@@ -18,6 +18,10 @@ public class MemoryAllocationSimulator extends JFrame {
     private final JLabel memoryStatusLabel;
     private int nextFitIndex = 0;
 
+    enum Estado {
+        Novo, Pronto, Executando, Bloqueado, Finalizado
+    }
+
     public MemoryAllocationSimulator() {
         super("Simulador de Alocação de Memória");
         setLayout(new BorderLayout());
@@ -36,6 +40,10 @@ public class MemoryAllocationSimulator extends JFrame {
                 new MemoryBlock(4, 300),
                 new MemoryBlock(5, 350)
         ));
+
+        DefaultListModel<String> statusListModel = new DefaultListModel<>();
+        JList<String> statusList = new JList<>(statusListModel);
+        add(new JScrollPane(statusList), BorderLayout.WEST);
 
         // Painel de Entrada
         JPanel inputPanel = new JPanel(new GridLayout(2, 1));
@@ -94,6 +102,7 @@ public class MemoryAllocationSimulator extends JFrame {
             String strategy = (String) strategyComboBox.getSelectedItem();
             Process p = new Process(name, size);
             processes.add(p);
+            p.estado = Estado.Pronto;
 
             boolean success = switch (strategy) {
                 case "First Fit" -> allocateFirstFit(p);
@@ -129,12 +138,16 @@ public class MemoryAllocationSimulator extends JFrame {
             new Thread(() -> {
                 Process p = processes.get(new Random().nextInt(processes.size()));
                 p.blocked = true;
+                p.estado = Estado.Bloqueado;
+                updateStatusList(statusListModel);
                 repaint();
                 try {
                     Thread.sleep(3000); // Simula espera E/S
                 } catch (InterruptedException ignored) {
                 }
                 p.blocked = false;
+                p.estado = Estado.Executando;
+                updateStatusList(statusListModel);
                 repaint();
             }).start();
         });
@@ -143,6 +156,13 @@ public class MemoryAllocationSimulator extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+    
+    private void updateStatusList(DefaultListModel<String> statusListModel) {
+        statusListModel.clear();
+        for (Process p : processes) {
+            statusListModel.addElement(p.toString());
+        }
     }
 
     private boolean allocateFirstFit(Process p) {
@@ -204,8 +224,8 @@ public class MemoryAllocationSimulator extends JFrame {
     private void drawMemoryBlocks(Graphics g) {
         int y = 20;
         for (MemoryBlock block : memoryBlocks) {
-            g.setColor(block.process == null ? Color.LIGHT_GRAY : (
-                    block.process.blocked ? Color.ORANGE : Color.GREEN));
+            g.setColor(block.process == null ? Color.LIGHT_GRAY :
+                    (block.process.blocked ? Color.ORANGE : Color.GREEN));
             g.fillRect(50, y, 200, 40);
             g.setColor(Color.BLACK);
             g.drawRect(50, y, 200, 40);
@@ -261,14 +281,16 @@ public class MemoryAllocationSimulator extends JFrame {
         String name;
         int size;
         boolean blocked = false;
+        Estado estado;
 
         Process(String name, int size) {
             this.name = name;
             this.size = size;
+            this.estado = Estado.Novo;
         }
 
         public String toString() {
-            return name + " (" + size + "KB)" + (blocked ? " [BLOQUEADO]" : "");
+            return name + " (" + size + "KB)" + "[" + estado + "]";
         }
     }
 }
