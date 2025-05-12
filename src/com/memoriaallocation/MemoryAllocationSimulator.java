@@ -1,3 +1,10 @@
+/*integrantes do grupo 2
+Marco Antonio Muniz
+Jamily Soares
+Davy Alexandre
+Mariana Pereira
+Jeniffer Emanuela
+*/
 package com.memoriaallocation;
 
 import javax.management.timer.Timer;
